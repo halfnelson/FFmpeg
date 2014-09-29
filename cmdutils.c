@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <math.h>
+#include <unistd.h>
 
 /* Include only the enabled headers since some compilers (namely, Sun
    Studio) will not omit unused inline functions and create undefined
@@ -122,7 +123,7 @@ void exit_program(int ret)
 {
     if (program_exit)
         program_exit(ret);
-
+	sleep(1);
     exit(ret);
 }
 

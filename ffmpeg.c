@@ -3763,7 +3763,7 @@ static int transcode(void)
 
 static int64_t getutime(void)
 {
-#if HAVE_GETRUSAGE
+#if HAVE_GETRUSAGE && !defined(__native_client__)
     struct rusage rusage;
 
     getrusage(RUSAGE_SELF, &rusage);
@@ -3781,7 +3781,7 @@ static int64_t getutime(void)
 
 static int64_t getmaxrss(void)
 {
-#if HAVE_GETRUSAGE && HAVE_STRUCT_RUSAGE_RU_MAXRSS
+#if HAVE_GETRUSAGE && HAVE_STRUCT_RUSAGE_RU_MAXRSS && !defined(__native_client__)
     struct rusage rusage;
     getrusage(RUSAGE_SELF, &rusage);
     return (int64_t)rusage.ru_maxrss * 1024;
@@ -3801,7 +3801,8 @@ static void log_callback_null(void *ptr, int level, const char *fmt, va_list vl)
 {
 }
 
-int main(int argc, char **argv)
+int ffmpeg_main(int argc, char **argv);
+int ffmpeg_main(int argc, char **argv)
 {
     int ret;
     int64_t ti;
@@ -3869,3 +3870,29 @@ int main(int argc, char **argv)
     exit_program(received_nb_signals ? 255 : main_return_code);
     return main_return_code;
 }
+
+#include <unistd.h>
+#include <ppapi_simple/ps_main.h>
+#include <sys/mount.h>
+#include <errno.h>
+
+int ppapi_simple_main(int argc, char* argv[]);
+int ppapi_simple_main(int argc, char* argv[]) {
+    int ret;
+	umount("/");
+	ret = mount("", "/", "html5fs", 0, "type=PERSISTENT");
+	if(ret) {
+		printf("mount() html5fs fial %s\n",strerror(errno));
+		return ret;
+	}
+	ret = chdir("/tmp");
+	if(ret) {
+		printf("chdir() /tmp fial %s\n",strerror(errno));
+		return ret;
+	}
+    ret = ffmpeg_main(argc,argv);
+    sleep(1);
+    return ret;
+}
+
+PPAPI_SIMPLE_REGISTER_MAIN(ppapi_simple_main)
