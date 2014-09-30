@@ -3873,12 +3873,16 @@ int ffmpeg_main(int argc, char **argv)
 
 #include <unistd.h>
 #include <ppapi_simple/ps_main.h>
+#include <ppapi_simple/ps_event.h>
+#include <ppapi_simple/ps_interface.h>
 #include <sys/mount.h>
 #include <errno.h>
 
+
+
 int ppapi_simple_main(int argc, char* argv[]);
 int ppapi_simple_main(int argc, char* argv[]) {
-
+printf("FFMpeg pnacl 1.0\n");
   //mount the filesystem
   int ret;
 	ret = mount("", "/encode", "html5fs", 0, "type=TEMPORARY");
@@ -3891,26 +3895,36 @@ int ppapi_simple_main(int argc, char* argv[]) {
 		printf("chdir() /encode fail %s\n",strerror(errno));
 		return ret;
 	}
-  char cmd[60];
+  char cmd[1000];
 
-  char *ffargv = {"-i", "video.webm", "-i", "audio.wav", "-c:v", "libtheora", "-c:a", "vorbis", "-qscale:v", "7", "-qscale:a", "7", "-strict", "experimental", "output.ogg"}
-  int ffargc = sizeof(ffargv)/sizeof(ffargv[0])
+  const char *ffargv[] = {"ffmpeg", "-i", "video.webm", "-i", "audio.wav", "-c:v", "libtheora", "-c:a", "vorbis", "-qscale:v", "7", "-qscale:a", "7", "-strict", "experimental", "output.ogg"};
+  int ffargc = sizeof(ffargv)/sizeof(ffargv[0]);
+  printf("Waiting for encode command.\n");
+  PSEventSetFilter(PSE_ALL);
 
-  while(true) {
+  while(1) {
 
-    //unlink outfile
-    ret = unlink("output.ogg");
-    if(ret) {
-      printf("removal of outfile failed %s\n",strerror(errno));
+    PSEvent* event;
+    while ((event = PSEventTryAcquire()) != NULL) {
+      if (event->type == PSE_INSTANCE_HANDLEMESSAGE) {
+        if (event->as_var.type == PP_VARTYPE_STRING) {
+          const char *message;
+          uint32_t len;
+          message = PSInterfaceVar()->VarToUtf8(event->as_var, &len);
+          if (strncmp(message, "encode", (size_t) len) == 0) {
+            //we have our encode message so encode our video
+            unlink("output.ogg");
+            printf("encoding\n");
+            ffmpeg_main(ffargc,ffargv);
+          }
+        }
+      }
+      PSEventRelease(event);
     }
-
-    if (fgets(cmd,60) != NULL) {
-      if (strcmp(cmd,"encode"))
-      ffmpeg_main(ffargc,ffargv);
-      sleep(1);
-    }
+    usleep(100000);
   }
-    return ret;
+
+  return ret;
 }
 
 PPAPI_SIMPLE_REGISTER_MAIN(ppapi_simple_main)

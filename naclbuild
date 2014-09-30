@@ -1,29 +1,31 @@
 #!/bin/sh
 
 
-PNACL_TC_PATH= $(abspath ${NACL_SDK_ROOT}/toolchain/linux_pnacl)
+PNACL_TC_PATH=$(cd ${NACL_SDK_ROOT}; pwd)/toolchain/linux_pnacl
+export PATH=${PNACL_TC_PATH}/bin:$PATH
 PNACL_FINALIZE=${PNACL_TC_PATH}/bin/pnacl-finalize
-export CC=pnacl-clang
-export CXX=pnacl-clang++
-export AR=pnacl-ar
-export RANLIB=pnacl-ranlib
-export READELF=pnacl-readelf
-export CFLAGS='-I${NACL_SDK_ROOT}/include -I${NACL_SDK_ROOT}/include/pnacl -I${NACL_SDK_ROOT}/ports/include'
+export CC=${PNACL_TC_PATH}/bin/pnacl-clang
+export CXX=${PNACL_TC_PATH}/bin/pnacl-clang++
+export AR=${PNACL_TC_PATH}/bin/pnacl-ar
+export NM=${PNACL_TC_PATH}/bin/pnacl-nm
+export RANLIB=${PNACL_TC_PATH}/bin/pnacl-ranlib
+export READELF=${PNACL_TC_PATH}/bin/pnacl-readelf
+export CFLAGS="-I${NACL_SDK_ROOT}/include -I${NACL_SDK_ROOT}/include/pnacl -I${NACL_SDK_ROOT}/ports/include"
 export CPPFLAGS=
 export CXXFLAGS=
-export LDFLAGS='-L${NACL_SDK_ROOT}/lib/pnacl/Release -L${NACL_SDK_ROOT}/ports/lib/newlib_pnacl/Release'
+export LDFLAGS="-L${NACL_SDK_ROOT}/lib/pnacl/Release -L${NACL_SDK_ROOT}/ports/lib/newlib_pnacl/Release"
 export AR_FLAGS=cr
 export PKG_CONFIG_LIBDIR=${PNACL_TC_PATH}/usr/lib/pkgconfig
 
 #export PKG_CONFIG_PATH=/d/nacl_sdk/pepper_33/toolchain/linux_pnacl/usr/lib/pkgconfig
 
-./configure \
+echo ./configure \
     --target-os=linux \
     --arch=pnacl \
     --disable-runtime-cpudetect \
     --cross-prefix=pnacl- \
-    --cc=pnacl-clang \
-    --ld=pnacl-clang++ \
+    --cc=$CC \
+    --ld=$CXX \
     --pkg_config=pkg-config \
     --enable-static \
     --enable-cross-compile \
@@ -66,4 +68,3 @@ export PKG_CONFIG_LIBDIR=${PNACL_TC_PATH}/usr/lib/pkgconfig
 
 make
 ${PNACL_FINALIZE} -o ./pnacl/ffmpeg.pexe ./ffmpeg
-nacl

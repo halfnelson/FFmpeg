@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+  <!--
+  Copyright (c) 2013 The Chromium Authors. All rights reserved.
+  Use of this source code is governed by a BSD-style license that can be
+  found in the LICENSE file.
+  -->
+<head>
+
+  <title>FFMpeg sandbox</title>
+
+  <script type="text/javascript">
+    EncodeModule = null;  // Global application object.
+
+
+    // Indicate load success.
+    function moduleDidLoad() {
+      EncodeModule = document.getElementById('encoder');
+      updateStatus('SUCCESS');
+      //EncodeModule.postMessage('encode');
+    }
+
+    // The 'message' event handler.  This handler is fired when the NaCl module
+    // posts a message to the browser by calling PPB_Messaging.PostMessage()
+    // (in C) or pp::Instance.PostMessage() (in C++).  This implementation
+    // simply displays the content of the message in an alert panel.
+    function handleMessage(message_event) {
+      console.log(message_event.data);
+    }
+
+    // If the page loads before the Native Client module loads, then set the
+    // status message indicating that the module is still loading.  Otherwise,
+    // do not change the status message.
+    function pageDidLoad() {
+      if (EncodeModule == null) {
+        updateStatus('LOADING...');
+      } else {
+        // It's possible that the Native Client module onload event fired
+        // before the page's onload event.  In this case, the status message
+        // will reflect 'SUCCESS', but won't be displayed.  This call will
+        // display the current message.
+        updateStatus();
+      }
+    }
+
+    // Set the global status message.  If the element with id 'statusField'
+    // exists, then set its HTML to the status message as well.
+    // opt_message The message test.  If this is null or undefined, then
+    // attempt to set the element with id 'statusField' to the value of
+    // |statusText|.
+    function updateStatus(opt_message) {
+      if (opt_message)
+        statusText = opt_message;
+      var statusField = document.getElementById('statusField');
+      if (statusField) {
+        statusField.innerHTML = statusText;
+      }
+    }
+  </script>
+</head>
+<body onload="pageDidLoad()">
+
+  <h1>FFMpeg encoder sandbox</h1>
+  <p>
+    <!--
+    Load the published pexe.
+    Note: Since this module does not use any real-estate in the browser, its
+    width and height are set to 0.
+
+    Note: The <embed> element is wrapped inside a <div>, which has both a 'load'
+    and a 'message' event listener attached.  This wrapping method is used
+    instead of attaching the event listeners directly to the <embed> element to
+    ensure that the listeners are active before the NaCl module 'load' event
+    fires.  This also allows you to use PPB_Messaging.PostMessage() (in C) or
+    pp::Instance.PostMessage() (in C++) from within the initialization code in
+    your module.
+    -->
+    <div id="listener">
+      <script type="text/javascript">
+        function recreateEncoder() {
+          //var oldenc = document.getElementById('encoder');
+          //var oldenchtml = oldenc.outerHTML;
+          var parent = document.getElementById('encoderContainer');
+          var oldenc = parent.innerHTML;
+          parent.innerHTML = "";
+          window.setTimeout(function(){
+            parent.innerHTML = oldenc;
+          },0)
+
+        }
+          var listener = document.getElementById('listener');
+          listener.addEventListener('load', moduleDidLoad, true);
+          listener.addEventListener('message', handleMessage, true);
+          listener.addEventListener('crash', function () {
+                  console.log("Exit code:", pnacl.exitStatus);
+
+              });
+
+      </script>
+      <div id="encoderContainer">
+      <embed id="encoder"
+             width=0 height=0
+             src="ffmpeg.nmf"
+             type="application/x-pnacl"
+
+             ps_stdout='dev/tty'
+             ps_stderr='dev/tty'
+             ps_tty_prefix=''
+              arg0='ffmpeg'
+
+              /></div>
+    </div>
+  </p>
+
+  <h2>Status <code id="statusField">NO-STATUS</code></h2>
+
+  <form>
+    <input type="file" id="fileinput"> <button onclick="doEncode(this,event); return false" >Encode</button>
+  </form>
+
+  <script>
+
+  function doEncode(item, e) {
+    e.preventDefault = true;
+    e.stopPropagation();
+     function launchEncoder() {
+        console.log("launching encoder");
+        EncodeModule.postMessage("encode");
+     }
+
+
+     function storeSourceFile(fs,f) {
+        fs.root.getFile("video.webm", {create: true,exclusive: false},
+          function(entry) {
+             entry.createWriter(function(writer) {
+               writer.onwriteend = launchEncoder
+               var blobF = new Blob([f], {type: 'video/webm'});
+               writer.write(blobF);
+             } )
+          })
+     }
+
+     function getFile(fs) {
+        var reader = new FileReader();
+        reader.onload = function(f) { storeSourceFile(fs, f.currentTarget.result); };
+        reader.readAsArrayBuffer(selected_file);
+     }
+
+     function onFileSystem(fs) {
+       FS = fs;
+
+       getFile(fs);
+
+     }
+     var selected_file = document.getElementById('fileinput').files[0];
+     webkitRequestFileSystem(window.TEMPORARY,50*1000000, onFileSystem, function(err) { console.log("fserr",err)});
+
+     return false;
+
+  }
+  </script>
+
+</body>
+</html>
