@@ -3878,20 +3878,38 @@ int ffmpeg_main(int argc, char **argv)
 
 int ppapi_simple_main(int argc, char* argv[]);
 int ppapi_simple_main(int argc, char* argv[]) {
-    int ret;
-	umount("/");
-	ret = mount("", "/", "html5fs", 0, "type=PERSISTENT");
+
+  //mount the filesystem
+  int ret;
+	ret = mount("", "/encode", "html5fs", 0, "type=TEMPORARY");
 	if(ret) {
-		printf("mount() html5fs fial %s\n",strerror(errno));
+		printf("mount() html5fs fail %s\n",strerror(errno));
 		return ret;
 	}
-	ret = chdir("/tmp");
+	ret = chdir("/encode");
 	if(ret) {
-		printf("chdir() /tmp fial %s\n",strerror(errno));
+		printf("chdir() /encode fail %s\n",strerror(errno));
 		return ret;
 	}
-    ret = ffmpeg_main(argc,argv);
-    sleep(1);
+  char cmd[60];
+
+  char *ffargv = {"-i", "video.webm", "-i", "audio.wav", "-c:v", "libtheora", "-c:a", "vorbis", "-qscale:v", "7", "-qscale:a", "7", "-strict", "experimental", "output.ogg"}
+  int ffargc = sizeof(ffargv)/sizeof(ffargv[0])
+
+  while(true) {
+
+    //unlink outfile
+    ret = unlink("output.ogg");
+    if(ret) {
+      printf("removal of outfile failed %s\n",strerror(errno));
+    }
+
+    if (fgets(cmd,60) != NULL) {
+      if (strcmp(cmd,"encode"))
+      ffmpeg_main(ffargc,ffargv);
+      sleep(1);
+    }
+  }
     return ret;
 }
 
