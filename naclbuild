@@ -19,7 +19,7 @@ export PKG_CONFIG_LIBDIR=${PNACL_TC_PATH}/usr/lib/pkgconfig
 
 #export PKG_CONFIG_PATH=/d/nacl_sdk/pepper_33/toolchain/linux_pnacl/usr/lib/pkgconfig
 
-echo ./configure \
+ echo ./configure \
     --target-os=linux \
     --arch=pnacl \
     --disable-runtime-cpudetect \
@@ -50,6 +50,7 @@ echo ./configure \
     --disable-network \
     --disable-encoders \
     --disable-filters \
+    --enable-filter=scale \
     --disable-decoders \
     --extra-libs='-lppapi_simple -lppapi -lppapi_cpp -lnacl_io' \
     --enable-libvorbis \
@@ -57,14 +58,14 @@ echo ./configure \
     --enable-encoder=libtheora \
     --enable-encoder=libvorbis \
     --enable-decoder=pcm_s16le \
-    --enable-decoder=vp8 \
+    --enable-decoder=mjpeg \
     --enable-filter=aresample \
     --disable-muxers \
     --enable-muxer=ogg \
-    --disable-demuxers \
-    --enable-demuxer=matroska \
-    --enable-demuxer=pcm_s16le \
-    --enable-demuxer=wav
+#    --disable-demuxers \
+#    --enable-demuxer=matroska \
+#    --enable-demuxer=pcm_s16le \
+#    --enable-demuxer=wav
 
 make
 ${PNACL_FINALIZE} -o ./pnacl/ffmpeg.pexe ./ffmpeg

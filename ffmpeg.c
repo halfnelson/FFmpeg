@@ -3897,7 +3897,7 @@ printf("FFMpeg pnacl 1.0\n");
 	}
   char cmd[1000];
 
-  const char *ffargv[] = {"ffmpeg", "-i", "video.webm", "-i", "audio.wav", "-c:v", "libtheora", "-c:a", "vorbis", "-qscale:v", "7", "-qscale:a", "7", "-strict", "experimental", "output.ogg"};
+  const char *ffargv[] = {"ffmpeg", "-f","mjpeg","-r","30", "-i", "video.mjpg", "-i", "audio.wav", "-c:v", "libtheora", "-c:a", "vorbis", "-qscale:v", "7", "-qscale:a", "7", "-shortest","-benchmark", "-strict", "experimental", "output.ogg"};
   int ffargc = sizeof(ffargv)/sizeof(ffargv[0]);
   printf("Waiting for encode command.\n");
   PSEventSetFilter(PSE_ALL);

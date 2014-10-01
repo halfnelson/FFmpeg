@@ -123,7 +123,8 @@ void exit_program(int ret)
 {
     if (program_exit)
         program_exit(ret);
-	sleep(1);
+    printf("**EXITING PROGRAM with code %d\n",ret);
+	  sleep(1);
     exit(ret);
 }
 
